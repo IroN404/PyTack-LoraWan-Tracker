@@ -57,15 +57,20 @@ while True:
     latitude = coord[0]
     longitude = coord[1]
     if latitude is not None and longitude is not None:
-        # Scale the latitude and longitude values to fit into 3 bytes each
-        scaled_latitude = int((latitude + 90) * 10000)  # Scale to fit between 0 and 180
-        scaled_longitude = int((longitude + 180) * 10000)  # Scale to fit between 0 and 360
-        # Encode the scaled values into bytes
-        encoded_data = scaled_latitude.to_bytes(3, 'big') + scaled_longitude.to_bytes(3, 'big')
-        print(formatted_time + " : " + "Latitude: {}, Longitude: {}".format(latitude, longitude))
-        # Send the encoded data via LoRa
-        s.send(encoded_data)
-        # 16777216.0
+        latitude_int = int((latitude + 90.0) / 180.0 * 16777215)
+        longitude_int = int((longitude + 180.0) / 360.0 * 16777215)
+    
+        hex_latitude = '{:06X}'.format(latitude_int)
+        hex_longitude = '{:06X}'.format(longitude_int)
+        print("Latitude: {}, Longitude: {}".format(hex_latitude, hex_longitude))
+
+        pkt = binascii.unhexlify(hex_latitude + hex_longitude)
+
+        s.send(pkt)
+
+        print('Waiting for an incoming packet')
+        data = srecv(64)
+        print(data)
     else:
         print(formatted_time + " : " + "No coordinates have been found, sending sample coordinates")
         latitude = 48.858844
